@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         AZURE_SUBSCRIPTION_ID = '2c9678e2-0629-4cec-aee3-529fd31d1325'
-        AZURE_TENANT_ID       = '117b7a62-3294-46d9-8110-39ebb7c7b16'
+        AZURE_TENANT_ID       = '117b7a62-3294-46d9-8110-39ebbf7c7b16'
         RESOURCE_GROUP        = 'jenkins-rg-centralus'
         WEBAPP_NAME           = 'yucandoit020-nodeapp888'
     }
