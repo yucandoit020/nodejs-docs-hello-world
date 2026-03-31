@@ -9,7 +9,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout Code') {
             steps {
                 checkout scm
@@ -30,10 +29,10 @@ pipeline {
                     passwordVariable: 'AZURE_CLIENT_SECRET'
                 )]) {
                     sh '''
-                    az login --service-principal \
-                      --username $AZURE_CLIENT_ID \
-                      --password $AZURE_CLIENT_SECRET \
-                      --tenant $AZURE_TENANT_ID
+                        az login --service-principal \
+                          --username $AZURE_CLIENT_ID \
+                          --password $AZURE_CLIENT_SECRET \
+                          --tenant $AZURE_TENANT_ID
                     '''
                 }
             }
@@ -42,7 +41,24 @@ pipeline {
         stage('Set Subscription') {
             steps {
                 sh '''
-                az account set --subscription $AZURE_SUBSCRIPTION_ID
+                    az account set --subscription $AZURE_SUBSCRIPTION_ID
+                '''
+            }
+        }
+
+        stage('Force Azure Runtime Config') {
+            steps {
+                sh '''
+                    az webapp config set \
+                      --name $WEBAPP_NAME \
+                      --resource-group $RESOURCE_GROUP \
+                      --linux-fx-version "NODE|20-lts" \
+                      --startup-file "npm start"
+
+                    az webapp config appsettings set \
+                      --name $WEBAPP_NAME \
+                      --resource-group $RESOURCE_GROUP \
+                      --settings WEBSITE_NODE_DEFAULT_VERSION=20-lts SCM_DO_BUILD_DURING_DEPLOYMENT=true
                 '''
             }
         }
@@ -50,14 +66,31 @@ pipeline {
         stage('Deploy to Azure') {
             steps {
                 sh '''
-                echo "Deploying to Azure Web App..."
+                    echo "Deploying to Azure Web App..."
+                    az webapp up \
+                      --name $WEBAPP_NAME \
+                      --resource-group $RESOURCE_GROUP \
+                      --runtime "NODE:20-lts"
+                    echo "Deployment finished!"
+                '''
+            }
+        }
 
-                az webapp up \
-                  --name $WEBAPP_NAME \
-                  --resource-group $RESOURCE_GROUP \
-                  --runtime "NODE:20-lts"
+        stage('Restart Web App') {
+            steps {
+                sh '''
+                    az webapp restart \
+                      --name $WEBAPP_NAME \
+                      --resource-group $RESOURCE_GROUP
+                '''
+            }
+        }
 
-                echo "Deployment finished!"
+        stage('Show Logs If Needed') {
+            steps {
+                sh '''
+                    echo "If app still fails, check:"
+                    echo "https://$WEBAPP_NAME.scm.azurewebsites.net/api/logs/docker"
                 '''
             }
         }
