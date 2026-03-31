@@ -55,7 +55,7 @@ pipeline {
                 az webapp up \
                   --name $WEBAPP_NAME \
                   --resource-group $RESOURCE_GROUP \
-                  --runtime "NODE:18-lts"
+                  --runtime "NODE:20-lts"
 
                 echo "Deployment finished!"
                 '''
