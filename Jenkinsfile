@@ -9,6 +9,13 @@ pipeline {
     }
 
     stages {
+
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
@@ -23,28 +30,45 @@ pipeline {
                     passwordVariable: 'AZURE_CLIENT_SECRET'
                 )]) {
                     sh '''
-                        az login --service-principal \
-                          --username $AZURE_CLIENT_ID \
-                          --password $AZURE_CLIENT_SECRET \
-                          --tenant $AZURE_TENANT_ID
-
-                        az account set --subscription $AZURE_SUBSCRIPTION_ID
+                    az login --service-principal \
+                      --username $AZURE_CLIENT_ID \
+                      --password $AZURE_CLIENT_SECRET \
+                      --tenant $AZURE_TENANT_ID
                     '''
                 }
+            }
+        }
+
+        stage('Set Subscription') {
+            steps {
+                sh '''
+                az account set --subscription $AZURE_SUBSCRIPTION_ID
+                '''
             }
         }
 
         stage('Deploy to Azure') {
             steps {
                 sh '''
-                    zip -r app.zip .
-                    az webapp deploy \
-                      --resource-group $RESOURCE_GROUP \
-                      --name $WEBAPP_NAME \
-                      --src-path app.zip \
-                      --type zip
+                echo "Deploying to Azure Web App..."
+
+                az webapp up \
+                  --name $WEBAPP_NAME \
+                  --resource-group $RESOURCE_GROUP \
+                  --runtime "NODE:18-lts"
+
+                echo "Deployment finished!"
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deployment SUCCESS'
+        }
+        failure {
+            echo 'Deployment FAILED'
         }
     }
 }
