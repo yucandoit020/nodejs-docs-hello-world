@@ -3,11 +3,12 @@
 // https://github.com/microsoft/Web-Dev-For-Beginners/tree/main/7-bank-project/api
 // ***************************************************************************
 
-const express = require('express');
+ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const crypto = require('crypto');
 
+const app = express();
 const port = process.env.PORT || 3000;
 const apiPrefix = '/api';
 
@@ -36,12 +37,9 @@ const db = {
   }
 };
 
-const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
-
-const router = express.Router();
 
 app.get('/', (req, res) => {
   res.status(200).send('Hello World!');
@@ -54,6 +52,8 @@ app.get('/health', (req, res) => {
 app.get('/api', (req, res) => {
   res.status(200).send('Fabrikam Bank API');
 });
+
+const router = express.Router();
 
 router.post('/accounts', (req, res) => {
   if (!req.body.user || !req.body.currency) {
@@ -108,16 +108,16 @@ router.post('/accounts/:user/transactions', (req, res) => {
     return res.status(404).json({ error: 'User does not exist' });
   }
 
-  if (!req.body.date || !req.body.object || !req.body.amount) {
+  if (!req.body.date || !req.body.object || req.body.amount === undefined) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
   let amount = req.body.amount;
-  if (amount && typeof amount !== 'number') {
+  if (typeof amount !== 'number') {
     amount = parseFloat(amount);
   }
 
-  if (amount && isNaN(amount)) {
+  if (isNaN(amount)) {
     return res.status(400).json({ error: 'Amount must be a number' });
   }
 
