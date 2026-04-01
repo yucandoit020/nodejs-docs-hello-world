@@ -40,25 +40,23 @@ pipeline {
 
         stage('Set Subscription') {
             steps {
-                sh '''
-                    az account set --subscription $AZURE_SUBSCRIPTION_ID
-                '''
+                sh 'az account set --subscription $AZURE_SUBSCRIPTION_ID'
             }
         }
 
-        stage('Force Azure Runtime Config') {
+        stage('Configure Azure Web App') {
             steps {
                 sh '''
                     az webapp config set \
                       --name $WEBAPP_NAME \
                       --resource-group $RESOURCE_GROUP \
                       --linux-fx-version "NODE|20-lts" \
-                      --startup-file "npm start"
+                      --startup-file "pm2 start index.js --no-daemon"
 
                     az webapp config appsettings set \
                       --name $WEBAPP_NAME \
                       --resource-group $RESOURCE_GROUP \
-                      --settings WEBSITE_NODE_DEFAULT_VERSION=20-lts SCM_DO_BUILD_DURING_DEPLOYMENT=true
+                      --settings WEBSITE_NODE_DEFAULT_VERSION="~20" SCM_DO_BUILD_DURING_DEPLOYMENT=true
                 '''
             }
         }
@@ -66,12 +64,10 @@ pipeline {
         stage('Deploy to Azure') {
             steps {
                 sh '''
-                    echo "Deploying to Azure Web App..."
                     az webapp up \
                       --name $WEBAPP_NAME \
                       --resource-group $RESOURCE_GROUP \
                       --runtime "NODE:20-lts"
-                    echo "Deployment finished!"
                 '''
             }
         }
@@ -82,15 +78,6 @@ pipeline {
                     az webapp restart \
                       --name $WEBAPP_NAME \
                       --resource-group $RESOURCE_GROUP
-                '''
-            }
-        }
-
-        stage('Show Logs If Needed') {
-            steps {
-                sh '''
-                    echo "If app still fails, check:"
-                    echo "https://$WEBAPP_NAME.scm.azurewebsites.net/api/logs/docker"
                 '''
             }
         }
